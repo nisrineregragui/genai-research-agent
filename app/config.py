@@ -27,8 +27,12 @@ DEFAULT_CACHE_DIR = PROJECT_ROOT / ".cache"             # [CACHE_DIR]
 DEFAULT_CHUNK_MAX_CHARS = 3500                          # [CHUNK_MAX_CHARS]
 # Texts per embeddings request: keeps each request well under the API's size limits.
 DEFAULT_EMBEDDING_BATCH_SIZE = 100                      # [EMBEDDING_BATCH_SIZE]
-# Chunks returned per search.
+# Chunks returned by a single unfiltered search (also the safety-net search of a plan).
 DEFAULT_RETRIEVAL_TOP_K = 5                             # [RETRIEVAL_TOP_K]
+# Chunks kept per planned retrieval task (beyond ~3 the hits were mostly noise).
+DEFAULT_TASK_TOP_K = 3                                  # [TASK_TOP_K]
+# Upper bound on chunks passed to the LLM for one question.
+DEFAULT_MAX_CONTEXT_CHUNKS = 12                         # [MAX_CONTEXT_CHUNKS]
 
 
 @dataclass(frozen=True)
@@ -42,6 +46,8 @@ class Settings:
     chunk_max_chars: int
     embedding_batch_size: int
     retrieval_top_k: int
+    task_top_k: int
+    max_context_chunks: int
 
 
 def _required(name: str) -> str:
@@ -76,4 +82,6 @@ def load_settings() -> Settings:
         chunk_max_chars=_int("CHUNK_MAX_CHARS", DEFAULT_CHUNK_MAX_CHARS),
         embedding_batch_size=_int("EMBEDDING_BATCH_SIZE", DEFAULT_EMBEDDING_BATCH_SIZE),
         retrieval_top_k=_int("RETRIEVAL_TOP_K", DEFAULT_RETRIEVAL_TOP_K),
+        task_top_k=_int("TASK_TOP_K", DEFAULT_TASK_TOP_K),
+        max_context_chunks=_int("MAX_CONTEXT_CHUNKS", DEFAULT_MAX_CONTEXT_CHUNKS),
     )

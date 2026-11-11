@@ -24,6 +24,10 @@ class VectorIndex:
         self._chunks = list(chunks)
         self._matrix = embeddings  # rows are unit-length, so dot product == cosine similarity
 
+    @property
+    def chunks(self) -> tuple[Chunk, ...]:
+        return tuple(self._chunks)
+    
     def search(
         self,
         query_vector: np.ndarray,
