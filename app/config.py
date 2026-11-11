@@ -33,6 +33,8 @@ DEFAULT_RETRIEVAL_TOP_K = 5                             # [RETRIEVAL_TOP_K]
 DEFAULT_TASK_TOP_K = 3                                  # [TASK_TOP_K]
 # Upper bound on chunks passed to the LLM for one question.
 DEFAULT_MAX_CONTEXT_CHUNKS = 12                         # [MAX_CONTEXT_CHUNKS]
+# Upper bound on retrieval tasks the Planner may produce for one question.
+DEFAULT_MAX_PLAN_TASKS = 6                              # [MAX_PLAN_TASKS]
 
 
 @dataclass(frozen=True)
@@ -48,6 +50,7 @@ class Settings:
     retrieval_top_k: int
     task_top_k: int
     max_context_chunks: int
+    max_plan_tasks: int
 
 
 def _required(name: str) -> str:
@@ -84,4 +87,5 @@ def load_settings() -> Settings:
         retrieval_top_k=_int("RETRIEVAL_TOP_K", DEFAULT_RETRIEVAL_TOP_K),
         task_top_k=_int("TASK_TOP_K", DEFAULT_TASK_TOP_K),
         max_context_chunks=_int("MAX_CONTEXT_CHUNKS", DEFAULT_MAX_CONTEXT_CHUNKS),
+        max_plan_tasks=_int("MAX_PLAN_TASKS", DEFAULT_MAX_PLAN_TASKS),
     )
