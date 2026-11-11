@@ -3,3 +3,7 @@
 
 # virtual environment
 .venv/
+
+
+# Python bytecode
+__pycache__/
