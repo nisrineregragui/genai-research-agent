@@ -22,8 +22,13 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 # Defaults for tunable parameters (environment variable that overrides each one in brackets).
 DEFAULT_EMBEDDING_MODEL = "text-embedding-3-small"      # [OPENAI_EMBEDDING_MODEL]
 DEFAULT_CORPUS_DIR = PROJECT_ROOT / "data" / "corpus"   # [CORPUS_DIR]
+DEFAULT_CACHE_DIR = PROJECT_ROOT / ".cache"             # [CACHE_DIR]
 # ~900 tokens: keeps typical sections whole and splits only the few oversized ones.
 DEFAULT_CHUNK_MAX_CHARS = 3500                          # [CHUNK_MAX_CHARS]
+# Texts per embeddings request: keeps each request well under the API's size limits.
+DEFAULT_EMBEDDING_BATCH_SIZE = 100                      # [EMBEDDING_BATCH_SIZE]
+# Chunks returned per search.
+DEFAULT_RETRIEVAL_TOP_K = 5                             # [RETRIEVAL_TOP_K]
 
 
 @dataclass(frozen=True)
@@ -33,7 +38,10 @@ class Settings:
     chat_model: str
     embedding_model: str
     corpus_dir: Path
+    cache_dir: Path
     chunk_max_chars: int
+    embedding_batch_size: int
+    retrieval_top_k: int
 
 
 def _required(name: str) -> str:
@@ -43,14 +51,17 @@ def _required(name: str) -> str:
     return value
 
 
-def _int(name: str, default: int) -> int:
+def _int(name: str, default: int, minimum: int = 1) -> int:
     raw = os.getenv(name, "").strip()
     if not raw:
         return default
     try:
-        return int(raw)
+        value = int(raw)
     except ValueError:
         raise RuntimeError(f"Environment variable {name} must be an integer, got {raw!r}") from None
+    if value < minimum:
+        raise RuntimeError(f"Environment variable {name} must be >= {minimum}, got {value}")
+    return value
 
 
 def load_settings() -> Settings:
@@ -61,5 +72,8 @@ def load_settings() -> Settings:
         chat_model=_required("OPENAI_MODEL"),
         embedding_model=os.getenv("OPENAI_EMBEDDING_MODEL") or DEFAULT_EMBEDDING_MODEL,
         corpus_dir=Path(os.getenv("CORPUS_DIR") or DEFAULT_CORPUS_DIR),
+        cache_dir=Path(os.getenv("CACHE_DIR") or DEFAULT_CACHE_DIR),
         chunk_max_chars=_int("CHUNK_MAX_CHARS", DEFAULT_CHUNK_MAX_CHARS),
+        embedding_batch_size=_int("EMBEDDING_BATCH_SIZE", DEFAULT_EMBEDDING_BATCH_SIZE),
+        retrieval_top_k=_int("RETRIEVAL_TOP_K", DEFAULT_RETRIEVAL_TOP_K),
     )

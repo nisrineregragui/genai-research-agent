@@ -1,0 +1,22 @@
+[
+  {
+    "id": "q1",
+    "question": "What are the main contraindications for warfarin?",
+    "expected_sources": ["dailymed-warfarin.md"]
+  },
+  {
+    "id": "q2",
+    "question": "Compare the contraindications of warfarin and apixaban. What conditions are shared and which are unique to each drug?",
+    "expected_sources": ["dailymed-warfarin.md", "dailymed-apixaban.md"]
+  },
+  {
+    "id": "q3",
+    "question": "A patient currently on warfarin is prescribed sertraline. What is the risk of bleeding and what monitoring is recommended?",
+    "expected_sources": ["dailymed-warfarin.md", "dailymed-sertraline.md"]
+  },
+  {
+    "id": "q4",
+    "question": "A patient with an eGFR of 25 mL/min is being considered for metformin. Is metformin contraindicated at this level of renal function, and what is the threshold?",
+    "expected_sources": ["dailymed-metformin.md"]
+  }
+]
