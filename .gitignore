@@ -1,9 +1,11 @@
-
+# Secrets: never commit real credentials
 .env
 
-# virtual environment
+# Local virtual environment
 .venv/
-
 
 # Python bytecode
 __pycache__/
+
+# Test cache
+.pytest_cache/
