@@ -6,7 +6,7 @@ themselves only receive the values they need.
 
 from __future__ import annotations
 
-from app.agent import Planner
+from app.agent import AnswerGenerator, Planner
 from app.config import Settings
 from app.ingestion import load_corpus
 from app.llm import get_client
@@ -34,3 +34,6 @@ def build_planner(settings: Settings, retriever: TaskRetriever) -> Planner:
         available_section_types=retriever.available_section_types,
         max_tasks=settings.max_plan_tasks,
     )
+
+def build_answer_generator(settings: Settings) -> AnswerGenerator:
+    return AnswerGenerator(get_client(), settings.chat_model)
