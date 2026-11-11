@@ -9,3 +9,6 @@ __pycache__/
 
 # Test cache
 .pytest_cache/
+
+# Embeddings cache (recomputed automatically when needed)
+.cache/
