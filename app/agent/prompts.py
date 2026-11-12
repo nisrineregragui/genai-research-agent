@@ -47,9 +47,11 @@ If the question gives a value in a unit or measure that differs from the sources
 the user's value exactly as given (same number, same unit). If you rely on an
 interpretation (for example that an eGFR is normalized to 1.73 m2), state it explicitly
 as an assumption; never convert the user's value silently.
-For comparisons, separate clearly: (a) conditions listed in both labels; (b) conceptual
-overlap, where both labels cover a similar category with different wording or scope;
-(c) conditions unique to one drug. Never present an overlap as an identical condition.
+For comparisons, separate clearly: (a) conditions listed in both labels with the same
+meaning and scope; (b) conceptual overlap, where both labels cover a similar category with
+different wording, qualifiers or scope (for example "renal impairment" versus "severe
+renal impairment"); (c) conditions unique to one drug. If no condition qualifies for (a),
+say so. Never present an overlap as an identical condition.
 8. Describe what the labels state; do not give personal treatment recommendations.
 9. Write in the answer language given in the user message (if none is given, the language
 of the question). Keep drug names and citation IDs unchanged.
@@ -109,9 +111,10 @@ Check every sentence of the draft and report issues of these kinds:
     clearance), including a value given in the question but restated in the draft with
     a different unit or measure;
   * a threshold or range reported without its conditions;
-  * a comparison that presents a conceptual overlap (similar category, different wording
-    or scope) as an identical condition. A comparison that states the overlap AND the
-    difference in wording or scope is correct: do not report it;
+* a comparison that presents a conceptual overlap (similar category, different wording,
+qualifiers or scope) as an identical condition, including a condition filed as "listed
+in both labels" although its qualifiers differ. A comparison that states the overlap
+AND the difference in wording or scope is correct: do not report it;
   * contradictory wording, or a caveat stated in the sources but missing from the draft.
 - incomplete: part of the question is left unanswered although the sources answer it.
 
