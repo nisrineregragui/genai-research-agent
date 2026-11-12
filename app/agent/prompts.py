@@ -69,6 +69,11 @@ every issue. Remove any claim the sources do not support rather than keeping it.
 gives a recommendation (for example "not generally recommended" or "contraindicated"),
 any summary must keep exactly that strength. Never describe how the question was
 decomposed (for example "the answer is the same in either direction").
+
+14. When the sources describe different products or formulations of the drug asked about
+   (for example a combination product and a single-ingredient product, or tablets and an
+   extended-release form), present each one separately, naming the product, instead of
+   keeping only one.
 """
 
 MEDICAL_DISCLAIMER = (
@@ -125,7 +130,9 @@ qualifiers or scope) as an identical condition, including a condition filed as "
 in both labels" although its qualifiers differ. A comparison that states the overlap
 AND the difference in wording or scope is correct: do not report it;
   * contradictory wording, or a caveat stated in the sources but missing from the draft.
-- incomplete: part of the question is left unanswered although the sources answer it.
+- incomplete: part of the question is left unanswered although the sources answer it,
+  including when the sources describe several products or formulations of the drug asked
+  about and the draft covers only one of them.
 
 Citations to source IDs that do not exist are checked automatically: do not report them.
 
