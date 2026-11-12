@@ -1,7 +1,7 @@
 """API tests with a fake agent (no LLM calls, no corpus loading)."""
 
 from __future__ import annotations
-
+import json
 import pytest
 from fastapi.testclient import TestClient
 from openai import OpenAIError
@@ -51,6 +51,13 @@ class _FakeAgent:
         if self._error:
             raise self._error
         return RESULT
+
+    def stream(self, question: str):
+        self.questions.append(question)
+        if self._error:
+            raise self._error
+        yield from RESULT.trace
+        yield RESULT
 
 
 def _client(agent: _FakeAgent) -> TestClient:
@@ -122,3 +129,43 @@ def test_unexpected_failure_returns_500_without_leaking_details() -> None:
         response = client.post("/ask", json={"question": "warfarin?"})
     assert response.status_code == 500
     assert "secret internal detail" not in response.text
+
+
+def _events(text: str) -> list[tuple[str, dict]]:
+    events = []
+    for block in text.strip().split("\n\n"):
+        fields = dict(line.split(": ", 1) for line in block.splitlines())
+        events.append((fields["event"], json.loads(fields["data"])))
+    return events
+
+
+def test_home_page_is_served() -> None:
+    with _client(_FakeAgent()) as client:
+        response = client.get("/")
+    assert response.status_code == 200
+    assert "text/html" in response.headers["content-type"]
+    assert "/ask/stream" in response.text
+
+
+def test_stream_sends_each_step_then_the_result() -> None:
+    with _client(_FakeAgent()) as client:
+        response = client.post("/ask/stream", json={"question": "warfarin?"})
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/event-stream")
+    events = _events(response.text)
+    assert [name for name, _ in events] == ["step", "step", "result"]
+    assert events[0][1] == {"node": "plan_question", "seconds": 1.0}
+    assert events[-1][1]["status"] == "verified"
+
+
+def test_stream_reports_a_model_failure_as_an_error_event() -> None:
+    with _client(_FakeAgent(error=OpenAIError("proxy down"))) as client:
+        response = client.post("/ask/stream", json={"question": "warfarin?"})
+    name, data = _events(response.text)[-1]
+    assert name == "error" and "language model service failed" in data["detail"]
+
+
+def test_stream_rejects_an_empty_question_before_streaming() -> None:
+    with _client(_FakeAgent()) as client:
+        response = client.post("/ask/stream", json={"question": "  "})
+    assert response.status_code == 422

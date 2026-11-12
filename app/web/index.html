@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pharmacology Research Agent</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --card: #ffffff; --text: #1d2330; --muted: #5b6475; --border: #dde1e8;
+    --accent: #2f5bd3; --ok: #1d7a46; --ok-bg: #e3f4ea; --warn: #9a5b00; --warn-bg: #fdf1dc;
+    --err: #b42318; --err-bg: #fde8e7; --code: #eef1f6; color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12151b; --card: #1b1f27; --text: #e6e9ef; --muted: #9aa3b2; --border: #2c3240;
+      --accent: #7c9cff; --ok: #5fd394; --ok-bg: #16301f; --warn: #f0b65a; --warn-bg: #33270f;
+      --err: #ff8a80; --err-bg: #3a1714; --code: #252b36; color-scheme: dark;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+         background: var(--bg); color: var(--text); line-height: 1.55; }
+  main { max-width: 900px; margin: 0 auto; padding: 32px 20px 64px; }
+  header h1 { margin: 0 0 4px; font-size: 1.6rem; }
+  header p { margin: 0; color: var(--muted); }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+          padding: 20px; margin-top: 20px; }
+  textarea { width: 100%; min-height: 90px; margin-top: 8px; padding: 12px; font: inherit; color: inherit;
+             background: transparent; border: 1px solid var(--border); border-radius: 8px; resize: vertical; }
+  textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .row { display: flex; gap: 12px; align-items: center; justify-content: space-between;
+         margin-top: 12px; flex-wrap: wrap; }
+  button.primary { background: var(--accent); color: #fff; border: 0; border-radius: 8px;
+                   padding: 10px 22px; font: inherit; font-weight: 600; cursor: pointer; }
+  button.primary:disabled { opacity: .55; cursor: not-allowed; }
+  .hint { color: var(--muted); font-size: .85rem; }
+  .examples { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  .examples button { font: inherit; font-size: .85rem; padding: 6px 12px; border-radius: 999px;
+                     border: 1px solid var(--border); background: transparent; color: var(--text); cursor: pointer; }
+  .examples button:hover { border-color: var(--accent); }
+  h2 { font-size: 1.1rem; margin: 0 0 10px; }
+  h3 { font-size: .95rem; margin: 20px 0 6px; }
+  .steps { list-style: none; padding: 0; margin: 0; }
+  .steps li { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0;
+              border-bottom: 1px dashed var(--border); }
+  .steps .time { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .running { color: var(--muted); margin: 10px 0 0; }
+  .spinner { display: inline-block; width: 12px; height: 12px; border: 2px solid var(--border);
+             border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite;
+             margin-right: 8px; vertical-align: -1px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .badge { display: inline-block; padding: 4px 12px; border-radius: 999px; font-weight: 600; font-size: .9rem; }
+  .badge.verified { background: var(--ok-bg); color: var(--ok); }
+  .badge.unverified { background: var(--warn-bg); color: var(--warn); }
+  .answer p { margin: .6em 0; }
+  .answer ul { margin: .4em 0; padding-left: 1.3em; }
+  a.cite { display: inline-block; font-size: .75rem; font-weight: 600; padding: 0 6px; margin: 0 1px;
+           border-radius: 6px; background: var(--code); color: var(--accent); text-decoration: none; }
+  .sources { list-style: none; padding: 0; }
+  .sources li { margin: 6px 0; }
+  .sources li:target { background: var(--code); border-radius: 6px; }
+  .file { color: var(--muted); font-size: .85rem; }
+  .file a { color: inherit; }
+  .notice { border-radius: 8px; padding: 12px 14px; margin-top: 14px; }
+  .notice.warn { background: var(--warn-bg); color: var(--warn); }
+  .notice.error { background: var(--err-bg); color: var(--err); }
+  .issue { border-left: 3px solid var(--warn); padding: 4px 12px; margin: 10px 0; }
+  .issue.minor { border-left-color: var(--border); }
+  .issue .meta { font-size: .8rem; color: var(--muted); }
+  .disclaimer { margin-top: 20px; font-size: .85rem; color: var(--muted); font-style: italic; }
+  details { margin-top: 20px; }
+  details summary { cursor: pointer; font-weight: 600; }
+  code { background: var(--code); padding: 1px 5px; border-radius: 4px; font-size: .85em; }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Pharmacology Research Agent</h1>
+    <p>Answers from a corpus of FDA drug labels (DailyMed) and MedlinePlus monographs, with citations
+       and an automatic review. Not medical advice.</p>
+  </header>
+
+  <section class="card">
+    <label for="question"><strong>Your question</strong></label>
+    <textarea id="question" placeholder="e.g. A patient on warfarin is prescribed sertraline. What is the bleeding risk?"></textarea>
+    <div class="row">
+      <span class="hint">Ctrl + Enter to send</span>
+      <button id="ask" class="primary" type="button">Ask</button>
+    </div>
+    <div class="examples" id="examples"></div>
+  </section>
+
+  <section class="card hidden" id="progress-card" aria-live="polite">
+    <h2>Agent steps</h2>
+    <ul class="steps" id="steps"></ul>
+    <p class="running" id="running"><span class="spinner"></span><span id="running-text">Starting…</span></p>
+  </section>
+
+  <section class="card hidden" id="error-card"><div class="notice error" id="error"></div></section>
+
+  <section class="card hidden" id="result-card"></section>
+</main>
+
+<script>
+  const EXAMPLES = [
+    ["Warfarin contraindications", "What are the main contraindications for warfarin?"],
+    ["Warfarin vs apixaban", "Compare the contraindications of warfarin and apixaban. What conditions are shared and which are unique to each drug?"],
+    ["Warfarin + sertraline", "A patient currently on warfarin is prescribed sertraline. What is the risk of bleeding and what monitoring is recommended?"],
+    ["Metformin, eGFR 25", "A patient with an eGFR of 25 mL/min is being considered for metformin. Is metformin contraindicated at this level of renal function, and what is the threshold?"],
+    ["INR (glossary tool)", "What does INR mean, and how often should it be checked for a patient on warfarin?"],
+    ["Question in French", "Quelles sont les contre-indications de l'apixaban ?"],
+  ];
+  const STEP_LABELS = {
+    plan_question: "Plan: decompose the question",
+    retrieve: "Retrieve passages (per-drug search)",
+    investigate: "Agent tools: fill evidence gaps",
+    draft_answer: "Draft the cited answer",
+    review_answer: "Critic: verify against the sources",
+    revise_answer: "Revise from the critic's issues",
+    finalize: "Final verification status",
+  };
+  const NEXT_STEP = {
+    start: "plan_question", plan_question: "retrieve", retrieve: "investigate",
+    investigate: "draft_answer", draft_answer: "review_answer", revise_answer: "review_answer",
+  };
+
+  const $ = (id) => document.getElementById(id);
+  const questionEl = $("question"), askButton = $("ask");
+  let busy = false, timer = null, started = 0, nextStep = "start";
+
+  const esc = (value) => String(value ?? "").replace(/[&<>"']/g,
+    (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const show = (id, visible) => $(id).classList.toggle("hidden", !visible);
+
+  for (const [label, question] of EXAMPLES) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = label;
+    button.title = question;
+    button.addEventListener("click", () => { questionEl.value = question; ask(); });
+    $("examples").appendChild(button);
+  }
+  askButton.addEventListener("click", ask);
+  questionEl.addEventListener("keydown", (e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) ask(); });
+
+  function updateRunning() {
+    const seconds = ((performance.now() - started) / 1000).toFixed(1);
+    const label = nextStep === "review_answer_done" ? "Applying the critic's verdict" : (STEP_LABELS[nextStep] || "Working");
+    $("running-text").textContent = `${label}… ${seconds} s`;
+  }
+
+  async function ask() {
+    const question = questionEl.value.trim();
+    if (!question || busy) return;
+    busy = true; askButton.disabled = true;
+    $("steps").innerHTML = ""; show("result-card", false); show("error-card", false);
+    show("progress-card", true); show("running", true);
+    started = performance.now(); nextStep = "plan_question";
+    updateRunning(); timer = setInterval(updateRunning, 100);
+    try {
+      const response = await fetch("/ask/stream", {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question }),
+      });
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error(formatDetail(body.detail) || `Request failed (HTTP ${response.status}).`);
+      }
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      for (;;) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        let separator;
+        while ((separator = buffer.indexOf("\n\n")) !== -1) {
+          handleEvent(parseEvent(buffer.slice(0, separator)));
+          buffer = buffer.slice(separator + 2);
+        }
+      }
+    } catch (error) {
+      showError(error.message || "The request failed.");
+    } finally {
+      clearInterval(timer); show("running", false);
+      busy = false; askButton.disabled = false;
+    }
+  }
+
+  function parseEvent(raw) {
+    let event = "message", data = "";
+    for (const line of raw.split("\n")) {
+      if (line.startsWith("event:")) event = line.slice(6).trim();
+      else if (line.startsWith("data:")) data += line.slice(5).trim();
+    }
+    return { event, data: data ? JSON.parse(data) : null };
+  }
+
+  function handleEvent({ event, data }) {
+    if (event === "step") {
+      const item = document.createElement("li");
+      item.innerHTML = `<span>✓ ${esc(STEP_LABELS[data.node] || data.node)}</span>`
+                     + `<span class="time">${data.seconds.toFixed(1)} s</span>`;
+      $("steps").appendChild(item);
+      nextStep = data.node === "review_answer" ? "review_answer_done" : (NEXT_STEP[data.node] || "finalize");
+    } else if (event === "result") {
+      renderResult(data);
+    } else if (event === "error") {
+      showError(data.detail);
+    }
+  }
+
+  function formatDetail(detail) {
+    if (Array.isArray(detail)) return detail.map((d) => d.msg).join(" ");
+    return detail;
+  }
+
+  function showError(message) {
+    $("error").textContent = message;
+    show("error-card", true);
+  }
+
+  function renderMarkdown(text) {
+    const inline = (s) => esc(s)
+      .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+      .replace(/\[(S\d+(?:\s*[,;]\s*S\d+)*)\]/g, (_, ids) =>
+        ids.split(/\s*[,;]\s*/).map((id) => `<a class="cite" href="#src-${id}">${id}</a>`).join(""));
+    const out = [];
+    let list = null;
+    for (const line of text.split("\n")) {
+      const item = line.match(/^\s*[-*•]\s+(.*)$/);
+      if (item) { (list ??= []).push(`<li>${inline(item[1])}</li>`); continue; }
+      if (list) { out.push(`<ul>${list.join("")}</ul>`); list = null; }
+      if (line.trim()) out.push(`<p>${inline(line)}</p>`);
+    }
+    if (list) out.push(`<ul>${list.join("")}</ul>`);
+    return out.join("");
+  }
+
+  function renderResult(r) {
+    const verified = r.status === "verified";
+    let html = `<div class="row" style="margin-top:0"><h2 style="margin:0">Answer</h2>`
+      + (verified ? `<span class="badge verified">✓ Verified by the critic</span>`
+                  : `<span class="badge unverified">⚠ Unverified</span>`) + `</div>`;
+    if (!verified) {
+      html += `<div class="notice warn">${r.reviewed
+        ? "The critic still found a major issue after the allowed revision. Check the points of attention below against the sources."
+        : "The automatic review could not run. Treat this answer with extra caution and check the sources."}</div>`;
+    }
+    html += `<div class="answer">${renderMarkdown(r.answer)}</div>`;
+    if (r.not_covered.length) {
+      html += `<h3>Not covered by the sources</h3><ul>${r.not_covered.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>`;
+    }
+    if (r.citations.length) {
+      html += `<h3>Sources</h3><ul class="sources">` + r.citations.map((c) => {
+        const file = c.url && c.url.startsWith("http")
+          ? `<a href="${esc(c.url)}" target="_blank" rel="noopener">${esc(c.file)}</a>` : esc(c.file);
+        return `<li id="src-${esc(c.id)}"><strong>[${esc(c.id)}]</strong> ${esc(c.section)} <span class="file">(${file})</span></li>`;
+      }).join("") + `</ul>`;
+    }
+    if (r.issues.length) {
+      html += `<h3>Points of attention from the review</h3>` + r.issues.map((i) =>
+        `<div class="issue ${esc(i.severity)}"><div class="meta">${esc(i.severity)} · ${esc(i.kind.replaceAll("_", " "))}`
+        + ` · ${i.detected_by === "check" ? "automatic check" : "critic"}</div>${esc(i.explanation)}</div>`).join("");
+    }
+    html += `<p class="disclaimer">${esc(r.disclaimer)}</p>`;
+    html += renderDetails(r);
+    $("result-card").innerHTML = html;
+    show("result-card", true);
+  }
+
+  function renderDetails(r) {
+    const plan = r.plan.sub_questions.map((s) => {
+      const scope = (s.drug ? `drug <code>${esc(s.drug)}</code>` : "any drug")
+        + (s.section_types.length ? `, prefers ${s.section_types.map((t) => `<code>${esc(t)}</code>`).join(" ")}` : "");
+      return `<li>${esc(s.sub_question)} <span class="file">(${scope})</span></li>`;
+    }).join("");
+    const tools = r.tool_calls.length
+      ? r.tool_calls.map((t) => {
+          const args = Object.entries(t.arguments).map(([k, v]) => `${k}=${JSON.stringify(v)}`).join(", ");
+          return `<li><code>${esc(t.name)}(${esc(args)})</code> → +${t.new_passages} passage(s)</li>`;
+        }).join("")
+      : "<li>No tool needed: the planned retrieval was judged sufficient.</li>";
+    const notes = [...r.plan.notes, ...r.investigation_notes];
+    const trace = r.trace.map((s) => `${esc(STEP_LABELS[s.node] || s.node)} (${s.seconds.toFixed(1)} s)`).join(" → ");
+    return `<details><summary>How the agent worked (${r.total_seconds.toFixed(1)} s, `
+      + `${r.revisions} revision${r.revisions === 1 ? "" : "s"})</summary>`
+      + `<h3>Plan</h3><ul>${plan}</ul>`
+      + (r.plan.unknown_drugs.length ? `<p>Not in the corpus: ${r.plan.unknown_drugs.map(esc).join(", ")}</p>` : "")
+      + `<h3>Tools chosen by the agent</h3><ul>${tools}</ul>`
+      + (notes.length ? `<h3>Notes</h3><ul>${notes.map((n) => `<li>${esc(n)}</li>`).join("")}</ul>` : "")
+      + `<h3>Execution trace</h3><p>${trace}</p></details>`;
+  }
+</script>
+</body>
+</html>

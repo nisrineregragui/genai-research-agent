@@ -15,6 +15,8 @@ from app.agent import (
     ReviewIssue,
     SubQuestion,
     build_graph,
+    TraceStep,
+    AgentResult
 )
 
 MAJOR = Review((ReviewIssue("unsupported", "major", "excerpt", "explanation", "suggestion"),))
@@ -105,3 +107,15 @@ def test_failed_revision_keeps_the_reviewed_draft_and_is_unverified() -> None:
 def test_empty_question_is_rejected() -> None:
     with pytest.raises(ValueError):
         ResearchAgent(None).ask("   ")
+
+
+def test_stream_yields_each_step_then_the_result() -> None:
+    generator, critic = _FakeGenerator(), _FakeCritic([CLEAN])
+    graph = build_graph(_FakePlanner(), _FakeRetriever(), _FakeInvestigator(), generator, critic, 1)
+    events = list(ResearchAgent(graph).stream("question?"))
+
+    assert all(isinstance(e, TraceStep) for e in events[:-1])
+    assert [e.node for e in events[:-1]] == [
+        "plan_question", "retrieve", "investigate", "draft_answer", "review_answer", "finalize"
+    ]
+    assert isinstance(events[-1], AgentResult) and events[-1].status == VERIFIED

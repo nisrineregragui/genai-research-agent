@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import operator
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from typing import Annotated, Any, TypedDict
 
@@ -160,20 +160,38 @@ class ResearchAgent:
     def __init__(self, graph) -> None:
         self._graph = graph
 
-    def ask(self, question: str) -> AgentResult:
+    def stream(self, question: str) -> Iterator[TraceStep | AgentResult]:
+        """Yield each node's TraceStep as soon as it completes, then the final AgentResult."""
         question = question.strip()
         if not question:
             raise ValueError("the question is empty")
-        state = self._graph.invoke({"question": question, "trace": []})
-        return AgentResult(
-            question=state["question"],
-            plan=state["plan"],
-            evidence=tuple(state["evidence"]),
-            tool_calls=tuple(state.get("tool_calls", ())),
-            investigation_notes=tuple(state.get("investigation_notes", ())),
-            answer=state["answer"],
-            review=state["review"],
-            status=state["status"],
-            revisions=state.get("revisions", 0),
-            trace=tuple(state["trace"]),
-        )
+        state: dict[str, Any] = {"question": question, "trace": []}
+        for chunk in self._graph.stream({"question": question, "trace": []}, stream_mode="updates"):
+            for update in chunk.values():
+                for key, value in update.items():
+                    if key == "trace":  # mirrors the graph's append reducer
+                        state["trace"] = [*state["trace"], *value]
+                        yield from value
+                    else:
+                        state[key] = value
+        yield _result_from_state(state)
+
+    def ask(self, question: str) -> AgentResult:
+        """Same code path as stream(), so both endpoints always behave identically."""
+        *_, result = self.stream(question)
+        return result
+
+
+def _result_from_state(state: dict[str, Any]) -> AgentResult:
+    return AgentResult(
+        question=state["question"],
+        plan=state["plan"],
+        evidence=tuple(state["evidence"]),
+        tool_calls=tuple(state.get("tool_calls", ())),
+        investigation_notes=tuple(state.get("investigation_notes", ())),
+        answer=state["answer"],
+        review=state["review"],
+        status=state["status"],
+        revisions=state.get("revisions", 0),
+        trace=tuple(state["trace"]),
+    )
