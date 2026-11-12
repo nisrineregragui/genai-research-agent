@@ -4,10 +4,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-# Corpus sources, keyed by the file-name prefix ("dailymed-warfarin.md" -> "dailymed").
+# Corpus sources. For drug documents the key is the file-name prefix
+# ("dailymed-warfarin.md" -> "dailymed"); "glossary" is GLOSSARY.md (term definitions).
 SOURCE_LABELS: dict[str, str] = {
     "dailymed": "DailyMed",        # professional FDA prescribing / OTC labels
     "medlineplus": "MedlinePlus",  # consumer-oriented monographs
+    "glossary": "Glossary",        # definitions only, not evidence about a drug
 }
 
 
@@ -30,7 +32,8 @@ class Chunk:
 
     @property
     def breadcrumb(self) -> str:
-        return " > ".join((f"{self.drug} ({self.source_label})", *self.section_path))
+        head = f"{self.drug} ({self.source_label})" if self.drug else self.source_label
+        return " > ".join((head, *self.section_path))
 
     @property
     def embedding_text(self) -> str:

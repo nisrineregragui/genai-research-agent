@@ -58,6 +58,9 @@ class TaskRetriever:
         # Derived from the corpus, never hardcoded. The Planner will receive these lists.
         self.available_drugs = sorted({c.drug.lower() for c in index.chunks})
         self.available_section_types = sorted({c.section_type for c in index.chunks})
+    @property
+    def chunks(self) -> tuple[Chunk, ...]:
+        return self._index.chunks
 
     def run(self, tasks: Sequence[RetrievalTask], original_question: str | None = None) -> list[RetrievedChunk]:
         self._validate(tasks)

@@ -23,6 +23,8 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_EMBEDDING_MODEL = "text-embedding-3-small"      # [OPENAI_EMBEDDING_MODEL]
 DEFAULT_CORPUS_DIR = PROJECT_ROOT / "data" / "corpus"   # [CORPUS_DIR]
 DEFAULT_CACHE_DIR = PROJECT_ROOT / ".cache"             # [CACHE_DIR]
+# Glossary file inside the corpus directory.
+DEFAULT_GLOSSARY_FILENAME = "GLOSSARY.md"               # [GLOSSARY_PATH] (full path override)
 # ~900 tokens: keeps typical sections whole and splits only the few oversized ones.
 DEFAULT_CHUNK_MAX_CHARS = 3500                          # [CHUNK_MAX_CHARS]
 # Texts per embeddings request: keeps each request well under the API's size limits.
@@ -31,10 +33,15 @@ DEFAULT_EMBEDDING_BATCH_SIZE = 100                      # [EMBEDDING_BATCH_SIZE]
 DEFAULT_RETRIEVAL_TOP_K = 5                             # [RETRIEVAL_TOP_K]
 # Chunks kept per planned retrieval task (beyond ~3 the hits were mostly noise).
 DEFAULT_TASK_TOP_K = 3                                  # [TASK_TOP_K]
-# Upper bound on chunks passed to the LLM for one question.
+# Upper bound on chunks passed to the LLM for one question by the planned retrieval.
 DEFAULT_MAX_CONTEXT_CHUNKS = 12                         # [MAX_CONTEXT_CHUNKS]
 # Upper bound on retrieval tasks the Planner may produce for one question.
 DEFAULT_MAX_PLAN_TASKS = 6                              # [MAX_PLAN_TASKS]
+# Agent tool loop: rounds of tool calls, passages returned by one get_section or
+# glossary call, and total passages the tools may add for one question.
+DEFAULT_MAX_TOOL_ROUNDS = 3                             # [MAX_TOOL_ROUNDS]
+DEFAULT_TOOL_MAX_RESULTS = 4                            # [TOOL_MAX_RESULTS]
+DEFAULT_MAX_TOOL_CHUNKS = 8                             # [MAX_TOOL_CHUNKS]
 
 
 @dataclass(frozen=True)
@@ -44,6 +51,7 @@ class Settings:
     chat_model: str
     embedding_model: str
     corpus_dir: Path
+    glossary_path: Path
     cache_dir: Path
     chunk_max_chars: int
     embedding_batch_size: int
@@ -51,6 +59,9 @@ class Settings:
     task_top_k: int
     max_context_chunks: int
     max_plan_tasks: int
+    max_tool_rounds: int
+    tool_max_results: int
+    max_tool_chunks: int
 
 
 def _required(name: str) -> str:
@@ -74,13 +85,15 @@ def _int(name: str, default: int, minimum: int = 1) -> int:
 
 
 def load_settings() -> Settings:
+    corpus_dir = Path(os.getenv("CORPUS_DIR") or DEFAULT_CORPUS_DIR)
     return Settings(
         openai_api_key=_required("OPENAI_API_KEY"),
         # Accept both spellings: the .env provided by Syntax says OPENAI_BASE_UR (missing "L").
         openai_base_url=os.getenv("OPENAI_BASE_URL") or os.getenv("OPENAI_BASE_UR") or None,
         chat_model=_required("OPENAI_MODEL"),
         embedding_model=os.getenv("OPENAI_EMBEDDING_MODEL") or DEFAULT_EMBEDDING_MODEL,
-        corpus_dir=Path(os.getenv("CORPUS_DIR") or DEFAULT_CORPUS_DIR),
+        corpus_dir=corpus_dir,
+        glossary_path=Path(os.getenv("GLOSSARY_PATH") or corpus_dir / DEFAULT_GLOSSARY_FILENAME),
         cache_dir=Path(os.getenv("CACHE_DIR") or DEFAULT_CACHE_DIR),
         chunk_max_chars=_int("CHUNK_MAX_CHARS", DEFAULT_CHUNK_MAX_CHARS),
         embedding_batch_size=_int("EMBEDDING_BATCH_SIZE", DEFAULT_EMBEDDING_BATCH_SIZE),
@@ -88,4 +101,7 @@ def load_settings() -> Settings:
         task_top_k=_int("TASK_TOP_K", DEFAULT_TASK_TOP_K),
         max_context_chunks=_int("MAX_CONTEXT_CHUNKS", DEFAULT_MAX_CONTEXT_CHUNKS),
         max_plan_tasks=_int("MAX_PLAN_TASKS", DEFAULT_MAX_PLAN_TASKS),
+        max_tool_rounds=_int("MAX_TOOL_ROUNDS", DEFAULT_MAX_TOOL_ROUNDS),
+        tool_max_results=_int("TOOL_MAX_RESULTS", DEFAULT_TOOL_MAX_RESULTS),
+        max_tool_chunks=_int("MAX_TOOL_CHUNKS", DEFAULT_MAX_TOOL_CHUNKS),
     )

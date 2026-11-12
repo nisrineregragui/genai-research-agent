@@ -37,8 +37,8 @@ def _sq(query: str, drug: str | None, sections: tuple[str, ...] = ()) -> dict:
     return {"sub_question": f"Q: {query}", "search_query": query, "drug": drug, "section_types": list(sections)}
 
 
-def _response(*sub_questions: dict, unknown: tuple[str, ...] = ()) -> str:
-    return json.dumps({"sub_questions": list(sub_questions), "unknown_drugs": list(unknown)})
+def _response(*sub_questions: dict, unknown: tuple[str, ...] = (), language: str = "English") -> str:
+    return json.dumps({"sub_questions": list(sub_questions), "unknown_drugs": list(unknown), "language": language})
 
 
 def test_plan_is_parsed_into_retrieval_tasks() -> None:
@@ -115,3 +115,10 @@ def test_unknown_drugs_are_reported() -> None:
     planner, _ = _planner(_response(_sq("warfarin interactions", "warfarin"), unknown=("ozempic",)))
     plan = planner.plan("Can I take warfarin with Ozempic?")
     assert plan.unknown_drugs == ("ozempic",)
+
+
+
+def test_question_language_is_detected() -> None:
+    planner, _ = _planner(_response(_sq("warfarin contraindications", "warfarin"), language="French"))
+    plan = planner.plan("Quelles sont les contre-indications de la warfarine ?")
+    assert plan.language == "French"

@@ -117,3 +117,9 @@ def test_transfer_check_still_works_when_citations_follow_the_period() -> None:
     generator, _ = _generator("Naproxen can cause gastrointestinal bleeding. [S1] The end.")
     answer = generator.generate("question", plan, [IBUPROFEN])
     assert any("naproxen" in w and "never mention it" in w for w in answer.warnings)
+
+def test_answer_language_is_given_explicitly_to_the_model() -> None:
+    plan = Plan(PLAN.sub_questions, language="English")
+    generator, completions = _generator("Contraindicated in pregnancy [S1].")
+    generator.generate("question", plan, [WARFARIN])
+    assert "Answer language: English" in completions.kwargs["messages"][1]["content"]

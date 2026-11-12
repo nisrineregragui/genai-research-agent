@@ -117,7 +117,10 @@ class AnswerGenerator:
 
 
 def _user_message(question: str, plan: Plan, sources: dict[str, RetrievedChunk]) -> str:
-    lines = [f"Question: {question}", "", "Sub-questions to cover:"]
+    lines = [f"Question: {question}"]
+    if plan.language:
+        lines.append(f"Answer language: {plan.language}")
+    lines += ["", "Sub-questions to cover:"]
     lines += [f"- {s.sub_question}" for s in plan.sub_questions]
     lines += ["", f"Drugs mentioned but NOT in the corpus: {', '.join(plan.unknown_drugs) or 'none'}", "", "Sources:"]
     for sid, retrieved in sources.items():

@@ -6,9 +6,9 @@ themselves only receive the values they need.
 
 from __future__ import annotations
 
-from app.agent import AnswerGenerator, Planner
+from app.agent import AnswerGenerator, Investigator, Planner, ToolBox
 from app.config import Settings
-from app.ingestion import load_corpus
+from app.ingestion import load_corpus, load_glossary
 from app.llm import get_client
 from app.retrieval import Embedder, TaskRetriever, VectorIndex, load_or_compute_embeddings
 
@@ -34,6 +34,21 @@ def build_planner(settings: Settings, retriever: TaskRetriever) -> Planner:
         available_section_types=retriever.available_section_types,
         max_tasks=settings.max_plan_tasks,
     )
+
+
+def build_toolbox(settings: Settings, retriever: TaskRetriever) -> ToolBox:
+    return ToolBox(retriever, load_glossary(settings.glossary_path), settings.tool_max_results)
+
+
+def build_investigator(settings: Settings, toolbox: ToolBox) -> Investigator:
+    return Investigator(
+        get_client(),
+        settings.chat_model,
+        toolbox,
+        max_rounds=settings.max_tool_rounds,
+        max_new_chunks=settings.max_tool_chunks,
+    )
+
 
 def build_answer_generator(settings: Settings) -> AnswerGenerator:
     return AnswerGenerator(get_client(), settings.chat_model)

@@ -6,6 +6,7 @@ Safeguards around the LLM:
 - a deterministic guard adds a task for any corpus drug named in the question
   but missing from the plan;
 - any LLM or parsing failure degrades to searching the question as-is.
+The Planner also detects the question's language, so the answer language is explicit.
 """
 
 from __future__ import annotations
@@ -37,6 +38,7 @@ class Plan:
     sub_questions: tuple[SubQuestion, ...]
     unknown_drugs: tuple[str, ...] = ()  # mentioned by the user but not in the corpus
     notes: tuple[str, ...] = ()          # what the safeguards changed (shown in traces/UI)
+    language: str = ""                   # language of the question ("" if not detected)
 
     def to_tasks(self) -> list[RetrievalTask]:
         return [
@@ -68,8 +70,9 @@ class Planner:
 
     def plan(self, question: str) -> Plan:
         notes: list[str] = []
+        language = ""
         try:
-            sub_questions, unknown = self._parse(self._call_llm(question), notes)
+            sub_questions, unknown, language = self._parse(self._call_llm(question), notes)
         except (OpenAIError, ValueError, KeyError, TypeError) as exc:
             logger.warning("Planner failed (%s: %s); falling back to the raw question", type(exc).__name__, exc)
             notes.append(f"planner failed ({type(exc).__name__}); searched the question as-is")
@@ -78,7 +81,7 @@ class Planner:
         sub_questions = self._add_missing_drugs(question, sub_questions, notes)
         if not sub_questions:
             sub_questions = [SubQuestion(question, question, None)]
-        return Plan(tuple(sub_questions), tuple(unknown), tuple(notes))
+        return Plan(tuple(sub_questions), tuple(unknown), tuple(notes), language)
 
     def _call_llm(self, question: str) -> str:
         response = self._client.chat.completions.create(
@@ -97,7 +100,7 @@ class Planner:
             raise ValueError("empty planner response")
         return content
 
-    def _parse(self, raw: str, notes: list[str]) -> tuple[list[SubQuestion], list[str]]:
+    def _parse(self, raw: str, notes: list[str]) -> tuple[list[SubQuestion], list[str], str]:
         data = json.loads(raw)
         result: list[SubQuestion] = []
         for item in data["sub_questions"]:
@@ -114,7 +117,8 @@ class Planner:
         if len(result) > self._max_tasks:
             notes.append(f"plan truncated from {len(result)} to {self._max_tasks} tasks")
             result = result[: self._max_tasks]
-        return result, [str(d) for d in data.get("unknown_drugs", [])]
+        unknown = [str(d) for d in data.get("unknown_drugs", [])]
+        return result, unknown, str(data.get("language", "")).strip()
 
     def _add_missing_drugs(
         self, question: str, sub_questions: list[SubQuestion], notes: list[str]
@@ -151,7 +155,8 @@ def _plan_schema(drugs: Sequence[str], section_types: Sequence[str]) -> dict:
                 },
             },
             "unknown_drugs": {"type": "array", "items": {"type": "string"}},
+            "language": {"type": "string"},
         },
-        "required": ["sub_questions", "unknown_drugs"],
+        "required": ["sub_questions", "unknown_drugs", "language"],
         "additionalProperties": False,
     }
