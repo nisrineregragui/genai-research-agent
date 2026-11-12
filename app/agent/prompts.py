@@ -65,6 +65,10 @@ definition is correct. Never use a glossary source as evidence for any other cla
 a drug (dosing, contraindications, interactions, monitoring): cite the drug's own documents.
 12. If a previous draft and reviewer issues are provided, write a corrected answer that fixes
 every issue. Remove any claim the sources do not support rather than keeping it.
+13. Never end with a conclusion that is stronger or softer than the sources. When a source
+gives a recommendation (for example "not generally recommended" or "contraindicated"),
+any summary must keep exactly that strength. Never describe how the question was
+decomposed (for example "the answer is the same in either direction").
 """
 
 MEDICAL_DISCLAIMER = (
@@ -114,6 +118,8 @@ Check every sentence of the draft and report issues of these kinds:
     clearance), including a value given in the question but restated in the draft with
     a different unit or measure;
   * a threshold or range reported without its conditions;
+   * a summary or conclusion that is stronger or softer than the sources' own recommendation
+    (for example "can be used" where a label says "should be avoided");
 * a comparison that presents a conceptual overlap (similar category, different wording,
 qualifiers or scope) as an identical condition, including a condition filed as "listed
 in both labels" although its qualifiers differ. A comparison that states the overlap
