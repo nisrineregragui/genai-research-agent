@@ -20,7 +20,9 @@ Rules:
 4. "search_query": a short, keyword-rich query in English (the corpus language),
    even when the user writes in another language.
 5. A simple single-drug question needs only 1 or 2 sub-questions. Never exceed {max_tasks}.
-6. List in "unknown_drugs" every drug the user mentions that is not a corpus drug.
+6. List in "unknown_drugs" every specific drug the user mentions that is not a corpus drug.
+Do not list drug classes or allergy categories (for example penicillins, NSAIDs, SSRIs,
+statins), especially when a corpus drug belongs to that class.
 7. "language": the language the user wrote the question in, as an English name
    (for example "English" or "French").
 8. In "sub_question", keep every value and unit exactly as the user wrote them (for example
