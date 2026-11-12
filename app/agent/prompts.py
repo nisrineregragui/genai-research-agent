@@ -23,6 +23,9 @@ Rules:
 6. List in "unknown_drugs" every drug the user mentions that is not a corpus drug.
 7. "language": the language the user wrote the question in, as an English name
    (for example "English" or "French").
+8. In "sub_question", keep every value and unit exactly as the user wrote them (for example
+   "25 mL/min" stays "25 mL/min"); never convert or complete a unit. "search_query" may use
+   the wording of the labels.
 """
 
 ANSWER_SYSTEM_PROMPT = """\
