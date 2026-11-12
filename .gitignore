@@ -12,3 +12,7 @@ __pycache__/
 
 # Embeddings cache (recomputed automatically when needed)
 .cache/
+
+
+# Other local env files (test variants)
+.env.*

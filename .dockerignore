@@ -1,0 +1,13 @@
+# Never send secrets or local state to the Docker build
+.env
+.env.*
+.venv
+.cache
+.git
+.pytest_cache
+**/__pycache__
+
+# Not needed at run time
+tests
+scripts
+docs

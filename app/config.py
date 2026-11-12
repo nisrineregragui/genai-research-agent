@@ -3,6 +3,9 @@
 Credentials and model names come only from environment variables. Tunable
 parameters have one documented default here and can be overridden by an
 environment variable without touching the code.
+
+Every value is read through _env(), which strips surrounding quotes: python-dotenv
+removes them itself, but `docker run --env-file` passes them through literally.
 """
 
 from __future__ import annotations
@@ -48,6 +51,7 @@ DEFAULT_MAX_REVISIONS = 1                               # [MAX_REVISIONS]
 # API: longest question accepted by POST /ask (protects cost and latency).
 DEFAULT_MAX_QUESTION_CHARS = 2000                       # [MAX_QUESTION_CHARS]
 
+
 @dataclass(frozen=True)
 class Settings:
     openai_api_key: str
@@ -70,16 +74,34 @@ class Settings:
     max_question_chars: int
 
 
-def _required(name: str) -> str:
-    value = os.getenv(name, "").strip()
-    if not value:
-        raise RuntimeError(f"Missing required environment variable: {name}")
+def _env(*names: str) -> str | None:
+    """First non-empty variable among `names`, cleaned.
+
+    Strips whitespace and one pair of surrounding quotes, so OPENAI_BASE_URL='https://...'
+    gives the same value with python-dotenv and with `docker run --env-file`.
+    """
+    for name in names:
+        value = os.getenv(name)
+        if value is None:
+            continue
+        value = value.strip()
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in "'\"":
+            value = value[1:-1].strip()
+        if value:
+            return value
+    return None
+
+
+def _required(*names: str) -> str:
+    value = _env(*names)
+    if value is None:
+        raise RuntimeError(f"Missing required environment variable: {names[0]}")
     return value
 
 
 def _int(name: str, default: int, minimum: int = 1) -> int:
-    raw = os.getenv(name, "").strip()
-    if not raw:
+    raw = _env(name)
+    if raw is None:
         return default
     try:
         value = int(raw)
@@ -91,16 +113,17 @@ def _int(name: str, default: int, minimum: int = 1) -> int:
 
 
 def load_settings() -> Settings:
-    corpus_dir = Path(os.getenv("CORPUS_DIR") or DEFAULT_CORPUS_DIR)
+    corpus_dir = Path(_env("CORPUS_DIR") or DEFAULT_CORPUS_DIR)
     return Settings(
         openai_api_key=_required("OPENAI_API_KEY"),
-        # Accept both spellings: the .env provided by Syntax says OPENAI_BASE_UR (missing "L").
-        openai_base_url=os.getenv("OPENAI_BASE_URL") or os.getenv("OPENAI_BASE_UR") or None,
+        # Second name: the .env provided by Syntax spells it OPENAI_BASE_UR (missing "L").
+        # None means "use the default OpenAI endpoint".
+        openai_base_url=_env("OPENAI_BASE_URL", "OPENAI_BASE_UR"),
         chat_model=_required("OPENAI_MODEL"),
-        embedding_model=os.getenv("OPENAI_EMBEDDING_MODEL") or DEFAULT_EMBEDDING_MODEL,
+        embedding_model=_env("OPENAI_EMBEDDING_MODEL") or DEFAULT_EMBEDDING_MODEL,
         corpus_dir=corpus_dir,
-        glossary_path=Path(os.getenv("GLOSSARY_PATH") or corpus_dir / DEFAULT_GLOSSARY_FILENAME),
-        cache_dir=Path(os.getenv("CACHE_DIR") or DEFAULT_CACHE_DIR),
+        glossary_path=Path(_env("GLOSSARY_PATH") or corpus_dir / DEFAULT_GLOSSARY_FILENAME),
+        cache_dir=Path(_env("CACHE_DIR") or DEFAULT_CACHE_DIR),
         chunk_max_chars=_int("CHUNK_MAX_CHARS", DEFAULT_CHUNK_MAX_CHARS),
         embedding_batch_size=_int("EMBEDDING_BATCH_SIZE", DEFAULT_EMBEDDING_BATCH_SIZE),
         retrieval_top_k=_int("RETRIEVAL_TOP_K", DEFAULT_RETRIEVAL_TOP_K),
@@ -112,5 +135,4 @@ def load_settings() -> Settings:
         max_tool_chunks=_int("MAX_TOOL_CHUNKS", DEFAULT_MAX_TOOL_CHUNKS),
         max_revisions=_int("MAX_REVISIONS", DEFAULT_MAX_REVISIONS, minimum=0),
         max_question_chars=_int("MAX_QUESTION_CHARS", DEFAULT_MAX_QUESTION_CHARS),
-        
     )
