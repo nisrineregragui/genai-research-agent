@@ -2,3 +2,6 @@ openai==3.49.0
 python-dotenv==1.2.4
 numpy==2.5.4
 langgraph==1.2.20
+fastapi==0.162.5
+pydantic==2.14.3
+uvicorn==0.54.0

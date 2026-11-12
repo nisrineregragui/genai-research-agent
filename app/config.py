@@ -45,6 +45,8 @@ DEFAULT_MAX_TOOL_CHUNKS = 8                             # [MAX_TOOL_CHUNKS]
 # Critic loop: maximum revisions of a draft; every revision is followed by a new review.
 # 0 disables revision (draft, one review, status).
 DEFAULT_MAX_REVISIONS = 1                               # [MAX_REVISIONS]
+# API: longest question accepted by POST /ask (protects cost and latency).
+DEFAULT_MAX_QUESTION_CHARS = 2000                       # [MAX_QUESTION_CHARS]
 
 @dataclass(frozen=True)
 class Settings:
@@ -65,6 +67,7 @@ class Settings:
     tool_max_results: int
     max_tool_chunks: int
     max_revisions: int
+    max_question_chars: int
 
 
 def _required(name: str) -> str:
@@ -108,4 +111,6 @@ def load_settings() -> Settings:
         tool_max_results=_int("TOOL_MAX_RESULTS", DEFAULT_TOOL_MAX_RESULTS),
         max_tool_chunks=_int("MAX_TOOL_CHUNKS", DEFAULT_MAX_TOOL_CHUNKS),
         max_revisions=_int("MAX_REVISIONS", DEFAULT_MAX_REVISIONS, minimum=0),
+        max_question_chars=_int("MAX_QUESTION_CHARS", DEFAULT_MAX_QUESTION_CHARS),
+        
     )
