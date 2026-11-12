@@ -1,0 +1,28 @@
+---
+config:
+  flowchart:
+    curve: linear
+---
+graph TD;
+	__start__([<p>__start__</p>]):::first
+	plan_question(plan_question)
+	retrieve(retrieve)
+	investigate(investigate)
+	draft_answer(draft_answer)
+	review_answer(review_answer)
+	revise_answer(revise_answer)
+	finalize(finalize)
+	__end__([<p>__end__</p>]):::last
+	__start__ --> plan_question;
+	draft_answer --> review_answer;
+	investigate --> draft_answer;
+	plan_question --> retrieve;
+	retrieve --> investigate;
+	review_answer -.-> finalize;
+	review_answer -.-> revise_answer;
+	revise_answer -.-> finalize;
+	revise_answer -.-> review_answer;
+	finalize --> __end__;
+	classDef default fill:#f2f0ff,line-height:1.2
+	classDef first fill-opacity:0
+	classDef last fill:#bfb6fc

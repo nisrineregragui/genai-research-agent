@@ -6,7 +6,7 @@ themselves only receive the values they need.
 
 from __future__ import annotations
 
-from app.agent import AnswerGenerator, Critic, Investigator, Planner, ToolBox
+from app.agent import AnswerGenerator, Critic, Investigator, Planner, ResearchAgent, ToolBox, build_graph
 from app.config import Settings
 from app.ingestion import load_corpus, load_glossary
 from app.llm import get_client
@@ -55,3 +55,17 @@ def build_answer_generator(settings: Settings) -> AnswerGenerator:
 
 def build_critic(settings: Settings) -> Critic:
     return Critic(get_client(), settings.chat_model)
+
+
+def build_agent(settings: Settings) -> ResearchAgent:
+    """The whole agent, built once at startup (loads the corpus and embeddings)."""
+    retriever = build_retriever(settings)
+    graph = build_graph(
+        planner=build_planner(settings, retriever),
+        retriever=retriever,
+        investigator=build_investigator(settings, build_toolbox(settings, retriever)),
+        generator=build_answer_generator(settings),
+        critic=build_critic(settings),
+        max_revisions=settings.max_revisions,
+    )
+    return ResearchAgent(graph)
