@@ -16,3 +16,8 @@ __pycache__/
 
 # Other local env files (test variants)
 .env.*
+
+
+
+# The template is safe to commit (no real values)
+!.env.example
