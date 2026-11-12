@@ -215,7 +215,9 @@ def _check_claims_about_unknown_drugs(
                 issues.append(ReviewIssue(
                     kind="drug_transfer", severity="major", excerpt=sentence[:150],
                     explanation=f"a statement about {drug} cites sources that never mention it",
-                    suggestion=f"only report what sources naming {drug} say, or state that the corpus does not cover it",
+                    suggestion=f"remove {drug} from this sentence, including any heading or label at its start, "
+                               f"or cite a source that names {drug}; state that the corpus does not cover "
+                               f"{drug} in a separate sentence without citations",
                     detected_by="check",
                 ))
     return issues

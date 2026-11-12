@@ -46,6 +46,8 @@ Rules:
    list that part in "not_covered". Never guess.
 5. For drugs listed as NOT in the corpus, state that the corpus has no label for them.
    You may only report what another drug's label says about them by name, with a citation.
+   Never name them in a heading, label or sentence that cites sources which do not name
+   them; state their absence in separate sentences without citations.
 6. Prefer DailyMed sources for clinical statements; use MedlinePlus as a supplement.
 7. Follow the sub-questions. For thresholds and doses, give the exact values and units.
 If the question gives a value in a unit or measure that differs from the sources, keep
