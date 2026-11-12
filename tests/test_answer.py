@@ -123,3 +123,45 @@ def test_answer_language_is_given_explicitly_to_the_model() -> None:
     generator, completions = _generator("Contraindicated in pregnancy [S1].")
     generator.generate("question", plan, [WARFARIN])
     assert "Answer language: English" in completions.kwargs["messages"][1]["content"]
+
+def test_deterministic_checks_produce_typed_major_issues() -> None:
+    generator, _ = _generator("Contraindicated in pregnancy [S1]. Also something [S7]. Again [S7].")
+    answer = generator.generate("question", PLAN, [WARFARIN])
+    # The repeated invalid citation is reported once.
+    assert [(i.kind, i.severity, i.detected_by) for i in answer.check_issues] == [
+        ("invalid_citation", "major", "check")
+    ]
+
+
+def test_revision_prompt_includes_previous_draft_and_reviewer_feedback() -> None:
+    generator, completions = _generator("Corrected answer [S1].")
+    generator.generate(
+        "question", PLAN, [WARFARIN],
+        previous_draft="Old draft [S1].",
+        reviewer_feedback='- [major unsupported] "Old draft": not in the source. Fix: remove it.',
+    )
+    user_message = completions.kwargs["messages"][1]["content"]
+    assert "Previous draft (to correct):\nOld draft [S1]." in user_message
+    assert "Reviewer issues to fix:" in user_message and "not in the source" in user_message
+
+def test_value_from_the_question_silently_restated_in_another_unit_is_flagged() -> None:
+    generator, _ = _generator("An eGFR of 25 mL/min/1.73 m² is below the threshold [S1].")
+    answer = generator.generate("Patient with an eGFR of 25 mL/min: contraindicated?", PLAN, [WARFARIN])
+    assert [(i.kind, i.severity, i.detected_by) for i in answer.check_issues] == [
+        ("clinically_ambiguous", "major", "check")
+    ]
+
+
+def test_value_kept_as_given_with_a_stated_assumption_is_accepted() -> None:
+    generator, _ = _generator(
+        "The question gives 25 mL/min; assuming an eGFR normalized to 25 mL/min/1.73 m², "
+        "it is below the threshold [S1]."
+    )
+    answer = generator.generate("Patient with an eGFR of 25 mL/min: contraindicated?", PLAN, [WARFARIN])
+    assert answer.check_issues == ()
+
+
+def test_values_in_the_same_unit_or_without_unit_are_not_flagged() -> None:
+    generator, _ = _generator("A dose of 5 mg is described; checks every 1 to 4 weeks [S1].")
+    answer = generator.generate("Is 5 mg of warfarin a usual dose?", PLAN, [WARFARIN])
+    assert answer.check_issues == ()

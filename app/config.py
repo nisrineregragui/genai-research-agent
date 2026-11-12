@@ -42,7 +42,9 @@ DEFAULT_MAX_PLAN_TASKS = 6                              # [MAX_PLAN_TASKS]
 DEFAULT_MAX_TOOL_ROUNDS = 3                             # [MAX_TOOL_ROUNDS]
 DEFAULT_TOOL_MAX_RESULTS = 4                            # [TOOL_MAX_RESULTS]
 DEFAULT_MAX_TOOL_CHUNKS = 8                             # [MAX_TOOL_CHUNKS]
-
+# Critic loop: maximum revisions of a draft; every revision is followed by a new review.
+# 0 disables revision (draft, one review, status).
+DEFAULT_MAX_REVISIONS = 1                               # [MAX_REVISIONS]
 
 @dataclass(frozen=True)
 class Settings:
@@ -62,6 +64,7 @@ class Settings:
     max_tool_rounds: int
     tool_max_results: int
     max_tool_chunks: int
+    max_revisions: int
 
 
 def _required(name: str) -> str:
@@ -104,4 +107,5 @@ def load_settings() -> Settings:
         max_tool_rounds=_int("MAX_TOOL_ROUNDS", DEFAULT_MAX_TOOL_ROUNDS),
         tool_max_results=_int("TOOL_MAX_RESULTS", DEFAULT_TOOL_MAX_RESULTS),
         max_tool_chunks=_int("MAX_TOOL_CHUNKS", DEFAULT_MAX_TOOL_CHUNKS),
+        max_revisions=_int("MAX_REVISIONS", DEFAULT_MAX_REVISIONS, minimum=0),
     )

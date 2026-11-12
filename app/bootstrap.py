@@ -6,7 +6,7 @@ themselves only receive the values they need.
 
 from __future__ import annotations
 
-from app.agent import AnswerGenerator, Investigator, Planner, ToolBox
+from app.agent import AnswerGenerator, Critic, Investigator, Planner, ToolBox
 from app.config import Settings
 from app.ingestion import load_corpus, load_glossary
 from app.llm import get_client
@@ -52,3 +52,6 @@ def build_investigator(settings: Settings, toolbox: ToolBox) -> Investigator:
 
 def build_answer_generator(settings: Settings) -> AnswerGenerator:
     return AnswerGenerator(get_client(), settings.chat_model)
+
+def build_critic(settings: Settings) -> Critic:
+    return Critic(get_client(), settings.chat_model)
