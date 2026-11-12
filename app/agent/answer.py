@@ -30,6 +30,11 @@ NO_SOURCES_MESSAGE = (
     "given from the provided sources."
 )
 
+NOT_COVERED_MESSAGE = (
+    "The corpus does not contain information that answers this question. Only the drugs and "
+    "topics covered by the provided drug labels and monographs can be answered."
+)
+
 _CITATION_GROUP_RE = re.compile(r"\[(S\d+(?:\s*[,;]\s*S\d+)*)\]")  # [S1] or [S1, S3]
 _CITATION_SPLIT_RE = re.compile(r"\s*[,;]\s*")
 _SENTENCE_SPLIT_RE = re.compile(r"(?<=[.!?])\s+")
@@ -45,8 +50,9 @@ _ANSWER_SCHEMA = {
     "properties": {
         "answer": {"type": "string"},
         "not_covered": {"type": "array", "items": {"type": "string"}},
+        "covered": {"type": "boolean"},
     },
-    "required": ["answer", "not_covered"],
+    "required": ["answer", "not_covered", "covered"],
     "additionalProperties": False,
 }
 
@@ -121,6 +127,9 @@ class AnswerGenerator:
         data = json.loads(self._call_llm(user_message))
         text = str(data["answer"]).strip()
         not_covered += [str(item).strip() for item in data["not_covered"] if str(item).strip()]
+        if data.get("covered", True) is False:
+            # Nothing relevant in the sources: a fixed message, so no model text can leak through.
+            return Answer(NOT_COVERED_MESSAGE, (), tuple(not_covered))
 
         cited_ids, issues = _validate_citations(text, sources)
         issues += _check_claims_about_unknown_drugs(text, plan.unknown_drugs, sources)

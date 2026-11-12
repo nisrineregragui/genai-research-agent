@@ -6,6 +6,7 @@ import json
 from types import SimpleNamespace
 
 from app.agent import AnswerGenerator, Plan, SubQuestion
+from app.agent.answer import NOT_COVERED_MESSAGE
 from app.agent.prompts import MEDICAL_DISCLAIMER
 from app.ingestion import Chunk
 from app.retrieval import RetrievedChunk
@@ -165,3 +166,20 @@ def test_values_in_the_same_unit_or_without_unit_are_not_flagged() -> None:
     generator, _ = _generator("A dose of 5 mg is described; checks every 1 to 4 weeks [S1].")
     answer = generator.generate("Is 5 mg of warfarin a usual dose?", PLAN, [WARFARIN])
     assert answer.check_issues == ()
+
+
+def test_question_outside_the_sources_gets_the_standard_message_without_citations() -> None:
+    content = json.dumps({
+        "answer": "Ozempic causes nausea [S1].",  # must never reach the user
+        "not_covered": ["Side effects of Ozempic."],
+        "covered": False,
+    })
+    completions = _FakeCompletions(content)
+    generator = AnswerGenerator(SimpleNamespace(chat=SimpleNamespace(completions=completions)), "fake-model")
+    plan = Plan(PLAN.sub_questions, unknown_drugs=("Ozempic",))
+
+    answer = generator.generate("What are the side effects of Ozempic?", plan, [IBUPROFEN])
+
+    assert answer.text == NOT_COVERED_MESSAGE
+    assert answer.citations == () and answer.check_issues == ()
+    assert "The corpus contains no drug label for Ozempic." in answer.not_covered

@@ -103,8 +103,11 @@ class Critic:
         """Review a draft. When `previous_review` is given, the draft is a revision of a
         reviewed draft: the Critic checks those issues first, so the target cannot move."""
         deterministic = answer.check_issues
-        if not retrieved:
-            return Review(deterministic)  # fixed "no source" message: nothing was claimed from sources
+        if not retrieved or not answer.citations:
+            # Nothing was claimed from the sources, so there is nothing for the LLM to verify.
+            # An answer that should cite but does not still carries the deterministic
+            # "cites no source" issue, so it is still revised.
+            return Review(deterministic)
 
         sources = number_sources(retrieved)
         try:

@@ -169,3 +169,11 @@ def test_re_review_receives_the_previous_issues_and_a_first_review_does_not() ->
     user_message = completions.kwargs["messages"][1]["content"]
     assert "Previous reviewer issues (this draft is a revision):" in user_message
     assert previous.to_feedback() in user_message
+
+
+def test_answer_without_citations_is_not_sent_to_the_llm_critic() -> None:
+    critic, completions = _critic()
+    uncited = Answer(text="The corpus does not cover this question.", citations=())
+    review = critic.review("question", PLAN, RETRIEVED, uncited)
+    assert completions.calls == 0
+    assert review.reviewed and not review.needs_revision

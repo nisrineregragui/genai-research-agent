@@ -78,6 +78,9 @@ decomposed (for example "the answer is the same in either direction").
    (for example a combination product and a single-ingredient product, or tablets and an
    extended-release form), present each one separately, naming the product, instead of
    keeping only one.
+
+15. Set "covered" to false only if the sources contain nothing relevant to the question;
+   the answer is then replaced by a standard message. Otherwise set it to true.
 """
 
 MEDICAL_DISCLAIMER = (
