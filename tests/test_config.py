@@ -54,3 +54,10 @@ def test_integer_settings_are_validated(env: pytest.MonkeyPatch) -> None:
     env.setenv("TASK_TOP_K", "zero")
     with pytest.raises(RuntimeError, match="TASK_TOP_K"):
         load_settings()
+
+def test_llm_retries_are_configurable_and_zero_is_allowed(env: pytest.MonkeyPatch) -> None:
+    env.setenv("LLM_MAX_RETRIES", "0")
+    assert load_settings().llm_max_retries == 0
+    env.setenv("LLM_MAX_RETRIES", "many")
+    with pytest.raises(RuntimeError, match="LLM_MAX_RETRIES"):
+        load_settings()

@@ -15,9 +15,12 @@ RUN pip install -r requirements.txt
 COPY app ./app
 COPY data ./data
 
-# Unprivileged user; the embeddings cache (computed at first startup) must be writable.
+# Unprivileged user. The embeddings cache is seeded with precomputed vectors: when the
+# configured embedding model and the corpus match, startup makes no embedding call at all
+# (no rate-limit risk); otherwise the cache key differs and they are recomputed at startup.
 RUN useradd --create-home --uid 1000 appuser \
     && mkdir -p /app/.cache \
+    && cp /app/data/embeddings/*.npy /app/.cache/ \
     && chown -R appuser /app/.cache
 USER appuser
 

@@ -50,6 +50,10 @@ DEFAULT_MAX_TOOL_CHUNKS = 8                             # [MAX_TOOL_CHUNKS]
 DEFAULT_MAX_REVISIONS = 1                               # [MAX_REVISIONS]
 # API: longest question accepted by POST /ask (protects cost and latency).
 DEFAULT_MAX_QUESTION_CHARS = 2000                       # [MAX_QUESTION_CHARS]
+# LLM client resilience: the provider's rate limits (HTTP 429) ask to wait ~30 s; the SDK
+# honours that delay, so enough retries turn a rate limit into a delay instead of a failure.
+DEFAULT_LLM_MAX_RETRIES = 6                             # [LLM_MAX_RETRIES]
+DEFAULT_LLM_TIMEOUT_SECONDS = 60                        # [LLM_TIMEOUT_SECONDS]
 
 
 @dataclass(frozen=True)
@@ -72,6 +76,8 @@ class Settings:
     max_tool_chunks: int
     max_revisions: int
     max_question_chars: int
+    llm_max_retries: int
+    llm_timeout_seconds: int
 
 
 def _env(*names: str) -> str | None:
@@ -135,4 +141,6 @@ def load_settings() -> Settings:
         max_tool_chunks=_int("MAX_TOOL_CHUNKS", DEFAULT_MAX_TOOL_CHUNKS),
         max_revisions=_int("MAX_REVISIONS", DEFAULT_MAX_REVISIONS, minimum=0),
         max_question_chars=_int("MAX_QUESTION_CHARS", DEFAULT_MAX_QUESTION_CHARS),
+        llm_max_retries=_int("LLM_MAX_RETRIES", DEFAULT_LLM_MAX_RETRIES, minimum=0),
+        llm_timeout_seconds=_int("LLM_TIMEOUT_SECONDS", DEFAULT_LLM_TIMEOUT_SECONDS),
     )
