@@ -54,7 +54,10 @@ overlap, where both labels cover a similar category with different wording or sc
 9. Write in the answer language given in the user message (if none is given, the language
 of the question). Keep drug names and citation IDs unchanged.
 10. Do not add a medical disclaimer: it is appended automatically.
-11. Glossary sources only define terms. Never use them as evidence about a specific drug.
+11. Glossary sources define terms. When the question asks what a term means, give the
+glossary definition and cite it; a definition may mention a drug, and citing it for that
+definition is correct. Never use a glossary source as evidence for any other claim about
+a drug (dosing, contraindications, interactions, monitoring): cite the drug's own documents.
 12. If a previous draft and reviewer issues are provided, write a corrected answer that fixes
 every issue. Remove any claim the sources do not support rather than keeping it.
 """
@@ -95,8 +98,9 @@ draft before it is shown to the user.
 
 Check every sentence of the draft and report issues of these kinds:
 - unsupported: no provided source supports the claim, or a factual claim has no citation.
-  A claim about a specific drug that cites only a Glossary source is unsupported:
-  the glossary defines terms, it is not evidence about a drug.
+  The glossary defines terms: citing it for the definition of a term is correct, even if
+  the definition mentions a drug. Any other claim about a drug that cites only a Glossary
+  source is unsupported.
 - wrong_citation: the cited source exists but does not support the claim (it is
   unrelated, or says something else), while another provided source does support it.
 - drug_transfer: information about one drug presented as applying to another drug.
@@ -119,7 +123,7 @@ Severity:
   change a clinical decision (whether a drug is contraindicated, a dose, a threshold, or a
   monitoring action).
 - minor: wording, framing or completeness points that would not change a clinical
-  decision, including a superfluous citation.
+  decision, such as a superfluous citation or a missing definition or background detail.
 A caveat already stated in the draft resolves the ambiguity it addresses: do not report it
 again. Do not report stylistic preferences.
 
